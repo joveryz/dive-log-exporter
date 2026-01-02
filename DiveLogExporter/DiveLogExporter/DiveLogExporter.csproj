@@ -101,7 +101,7 @@
     <Compile Include="ExportedDiveLogTank.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Shearwater\ShearwaterUtilsExt.cs" />
+    <Compile Include="Shearwater\ShearwaterUtilsWrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -15,6 +15,11 @@ namespace DiveLogExporter
 
         public static string ToCsvRow(this object obj)
         {
+            if(obj == null)
+            {
+                return string.Empty;
+            }
+
             var sb = new StringBuilder();
             var properties = obj.GetType().GetProperties();
             foreach (var property in properties)
