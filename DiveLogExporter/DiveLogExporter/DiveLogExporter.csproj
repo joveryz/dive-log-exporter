@@ -99,21 +99,13 @@
     <Compile Include="ExportedDiveLogSample.cs" />
     <Compile Include="ExportedDiveLogSummary.cs" />
     <Compile Include="ExportedDiveLogTank.cs" />
-    <Compile Include="Shearwater\DiveLogGasMessageRetrieverMod.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Shearwater\DiveLogParserLocalizedUtilMod.cs" />
-    <Compile Include="Shearwater\DiveLogProductUtilMod.cs" />
-    <Compile Include="Shearwater\ScriptLocalizationMod.cs" />
-    <Compile Include="Shearwater\ShearwaterXMLExporterMod.cs" />
+    <Compile Include="Shearwater\ShearwaterUtilsExt.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-    <AdditionalFiles Include="Shearwater\Resource\I2Languages.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <TargetPath>I2Languages.json</TargetPath>
-    </AdditionalFiles>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

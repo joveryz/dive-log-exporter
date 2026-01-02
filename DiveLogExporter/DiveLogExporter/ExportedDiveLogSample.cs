@@ -26,17 +26,17 @@
 
         public float PPHE { get; set; }
 
-        public double Tank1PressureInBar { get; set; }
-        public double Tank2PressureInBar { get; set; }
-        public double Tank3PressureInBar { get; set; }
-        public double Tank4PressureInBar { get; set; }
+        public double? Tank1PressureInBar { get; set; }
+        public double? Tank2PressureInBar { get; set; }
+        public double? Tank3PressureInBar { get; set; }
+        public double? Tank4PressureInBar { get; set; }
 
-        public double SAC { get; set; }
+        public double? SurfaceAirConsumptionInBar { get; set; }
 
         public int Temperature { get; set; }
 
         public float BatteryVoltage { get; set; }
 
-        public double GasTimeRemainingInMinutes { get; set; }
+        public int? GasTimeRemainingInMinutes { get; set; }
     }
 }

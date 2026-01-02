@@ -62,7 +62,7 @@ namespace DiveLogExporter
                 CNSPercentPostDive = footer.CnsPercent,
 
                 // Computer Info
-                ComputerModel = DiveLogProductUtilMod.FriendlyProductName(finalLog),
+                ComputerModel = ShearwaterUtilsExt.GetComputerName(finalLog),
                 ComputerSerialNumber = DiveLogSerialNumberUtil.GetSerialNumberToHex(shearwaterDiveLog),
                 ComputerFirmwareVersion = (int)header.FirmwareVersion,
                 BatteryType = DiveLogBatteryUtil.GetBatteryType(header),
@@ -132,11 +132,6 @@ namespace DiveLogExporter
 
                 var absolutePressureInAta = GasUtil.GetAbsolutePressureATA((float)header.SurfacePressure, ConvertDepthToMeters(header, shearwaterDiveLogSample.Depth), false);
                 var partialPressures = GasUtil.FindInertGasPartialPressures(shearwaterDiveLogSample.AveragePPO2, absolutePressureInAta, shearwaterDiveLogSample.FractionO2, shearwaterDiveLogSample.FractionHe);
-                var tank1Message = DiveLogGasMessageRetrieverMod.Get_Tank0_Message(shearwaterDiveLogSample);
-                var tank2Message = DiveLogGasMessageRetrieverMod.Get_Tank1_Message(shearwaterDiveLogSample);
-                var tank3Message = DiveLogGasMessageRetrieverMod.Get_Tank2_Message(shearwaterDiveLogSample);
-                var tank4Message = DiveLogGasMessageRetrieverMod.Get_Tank3_Message(shearwaterDiveLogSample);
-                var sacMessage = DiveLogGasMessageRetrieverMod.Get_SAC_Message(shearwaterDiveLogSample);
 
                 Samples.Add(new ExportedDiveLogSample
                 {
@@ -152,14 +147,14 @@ namespace DiveLogExporter
                     PPO2 = shearwaterDiveLogSample.AveragePPO2,
                     PPN2 = partialPressures.ppN2ATA,
                     PPHE = partialPressures.ppHeATA,
-                    Tank1PressureInBar = int.TryParse(tank1Message, out int tank1PressureInPSI) ? UnitConverter.ConvertTankUnits(tank1PressureInPSI, SettingDefinitions.TankUnits.Bar) : 0,
-                    Tank2PressureInBar = int.TryParse(tank2Message, out int tank2PressureInPSI) ? UnitConverter.ConvertTankUnits(tank2PressureInPSI, SettingDefinitions.TankUnits.Bar) : 0,
-                    Tank3PressureInBar = int.TryParse(tank3Message, out int tank3PressureInPSI) ? UnitConverter.ConvertTankUnits(tank3PressureInPSI, SettingDefinitions.TankUnits.Bar) : 0,
-                    Tank4PressureInBar = int.TryParse(tank4Message, out int tank4PressureInPSI) ? UnitConverter.ConvertTankUnits(tank4PressureInPSI, SettingDefinitions.TankUnits.Bar) : 0,
-                    SAC = int.TryParse(sacMessage, out int sacInPSI) ? UnitConverter.ConvertTankUnits(sacInPSI, SettingDefinitions.TankUnits.Bar) : 0,
+                    Tank1PressureInBar = ShearwaterUtilsExt.GetTankPressureInBar(shearwaterDiveLogSample, 0),
+                    Tank2PressureInBar = ShearwaterUtilsExt.GetTankPressureInBar(shearwaterDiveLogSample, 1),
+                    Tank3PressureInBar = ShearwaterUtilsExt.GetTankPressureInBar(shearwaterDiveLogSample, 2),
+                    Tank4PressureInBar = ShearwaterUtilsExt.GetTankPressureInBar(shearwaterDiveLogSample, 3),
+                    SurfaceAirConsumptionInBar = ShearwaterUtilsExt.GetSurfaceAirConsumptionInBar(shearwaterDiveLogSample),
                     Temperature = shearwaterDiveLogSample.WaterTemperature,
                     BatteryVoltage = shearwaterDiveLogSample.BatteryVoltage,
-                    GasTimeRemainingInMinutes = int.TryParse(DiveLogGasMessageRetrieverMod.Get_GasTime_Message(shearwaterDiveLogSample), out int gasTimeRemaining) ? gasTimeRemaining : 0
+                    GasTimeRemainingInMinutes = ShearwaterUtilsExt.GetGasTimeRemainingInMinutes(shearwaterDiveLogSample),
                 });
             }
         }
