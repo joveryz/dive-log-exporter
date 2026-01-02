@@ -11,7 +11,7 @@ using ExtendedCoreParserUtilities;
 using Shearwater;
 using ShearwaterUtils;
 
-namespace ShearwaterDiveLogExporter
+namespace DiveLogExporter
 {
     internal class ExportedDiveLog
     {

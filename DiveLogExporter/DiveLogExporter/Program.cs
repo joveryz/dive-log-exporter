@@ -4,7 +4,7 @@ using System.Text;
 using Assets.Scripts.Persistence.LocalCache;
 using ExtendedCoreParserUtilities;
 
-namespace ShearwaterDiveLogExporter
+namespace DiveLogExporter
 {
     internal class Program
     {
@@ -14,7 +14,7 @@ namespace ShearwaterDiveLogExporter
             // 2nd arg: path to output csv files
             if (args.Length != 2)
             {
-                Console.WriteLine("Usage: ShearwaterDiveLogExporter <path to shearwater db> <output directory>");
+                Console.WriteLine("Usage: DiveLogExporter <path to shearwater db> <output directory>");
                 return;
             }
 

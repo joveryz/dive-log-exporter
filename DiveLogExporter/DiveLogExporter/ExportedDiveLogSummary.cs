@@ -1,4 +1,4 @@
-﻿namespace ShearwaterDiveLogExporter
+﻿namespace DiveLogExporter
 {
     internal class ExportedDiveLogSummary
     {

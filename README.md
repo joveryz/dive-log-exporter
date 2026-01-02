@@ -1,2 +1,2 @@
-# shearwater-dive-log-exporter
-Export all the info from Shearwater Cloud database
+# dive-log-exporter
+Export dive logs from dive computers' data files to CSV.
