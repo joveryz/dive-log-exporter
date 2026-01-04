@@ -115,9 +115,7 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Exporter\Binary\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="Shearwater\Binary\Assembly-CSharp.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
