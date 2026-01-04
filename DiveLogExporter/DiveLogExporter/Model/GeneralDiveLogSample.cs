@@ -20,7 +20,7 @@
 
         public int? NoDecoLimit { get; set; }
 
-        public int? CNS { get; set; }
+        public int? CentralNervousSystemPercent { get; set; }
 
         public double? GasDensity { get; set; }
 

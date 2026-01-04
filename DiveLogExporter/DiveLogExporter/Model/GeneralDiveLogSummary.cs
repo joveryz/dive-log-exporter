@@ -46,16 +46,16 @@
 
         public int? SurfaceIntervalInSeconds { get; set; }
 
-        public int? Salinity { get; set; }
+        public int? WaterDenisity { get; set; }
 
-        public string? SalinityType { get; set; }
+        public string? WaterType { get; set; }
 
         // Computer Info
         public string? ComputerModel { get; set; }
 
         public string? ComputerSerialNumber { get; set; }
 
-        public int? ComputerFirmwareVersion { get; set; }
+        public string? ComputerFirmwareVersion { get; set; }
 
         public string? BatteryType { get; set; }
 
@@ -75,10 +75,10 @@
 
         public int? GradientFactorHigh { get; set; }
 
-        public double? GradientFactor99Max { get; set; }
+        public double? GradientFactorSurfaceEnd { get; set; }
 
-        public double? CNSPercentPreDive { get; set; }
+        public double? CentralNervousSystemPercentPreDive { get; set; }
 
-        public double? CNSPercentPostDive { get; set; }
+        public double? CentralNervousSystemPercentPostDive { get; set; }
     }
 }

@@ -3,7 +3,6 @@ using Assets.Scripts.DiveLogs.Utils.Gases;
 using Assets.Scripts.Utility;
 using Assets.ShearwaterCloud.Modules.Graphs.DiveGraph.GraphAssembly.GraphDataAssembly.SeriesSampleAssemblers;
 using CoreParserUtilities;
-using DiveLogExporter;
 using DiveLogExporter.Model;
 using DiveLogModels;
 using ExtendedCoreParserUtilities;
@@ -12,9 +11,9 @@ using static ShearwaterUtils.SettingDefinitions;
 
 namespace Shearwater
 {
-    public static class ShearwaterUtilsWrapper
+    public static class ShearwaterUtils
     {
-        static ShearwaterUtilsWrapper()
+        static ShearwaterUtils()
         {
             DiveLogProductUtil.RetrieveFriendlyProductName = (int productId) =>
             {

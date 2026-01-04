@@ -97,6 +97,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Garmin\GarminUtils.cs" />
     <Compile Include="Model\GeneralDiveLog.cs" />
     <Compile Include="Model\GeneralDiveLogExtensions.cs" />
     <Compile Include="Model\GeneralDiveLogSample.cs" />
@@ -108,7 +109,7 @@
     <Compile Include="Exporter\ShearwaterDiveLogExporter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Shearwater\ShearwaterUtilsWrapper.cs" />
+    <Compile Include="Shearwater\ShearwaterUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

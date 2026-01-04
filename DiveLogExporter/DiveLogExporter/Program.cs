@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
-using Assets.Scripts.Persistence.LocalCache;
 using DiveLogExporter.Exporter;
 using DiveLogExporter.Model;
-using DiveLogModels;
 
 namespace DiveLogExporter
 {
@@ -12,33 +12,48 @@ namespace DiveLogExporter
     {
         static int Main(string[] args)
         {
-            // 1st arg: path to shearwater db
-            // 2nd arg: path to output csv files
+            // 1st arg: input directory with dive log files
+            // 2nd arg: output directory
             if (args.Length != 2)
             {
-                Console.WriteLine("Usage: DiveLogExporter <path to shearwater db> <output directory>");
+                Console.WriteLine("Usage: DiveLogExporter <input directory with dive log files> <output directory>");
                 return 1;
             }
 
-            var allSummary = new StringBuilder();
+            var diveLogs = new List<GeneralDiveLog>();
+            var factory = new ExporterFactory();
+
+            // enumerate all files in the input directory, process each with the appropriate exporter
+            // only process files at the top level, do not recurse into subdirectories
+            Directory.EnumerateFiles(args[0]).ToList().ForEach(file =>
+            {
+                var exporter = factory.GetExporter(file);
+                if (exporter != null)
+                {
+                    Console.WriteLine($"[Main] Processing file: {file} with exporter: {exporter.GetType().Name}");
+                    var exportedDiveLogs = exporter.Export(file);
+                    diveLogs.AddRange(exportedDiveLogs);
+                    Console.WriteLine($"[Main] Exported {exportedDiveLogs.Count} dive logs from file: {file}");
+                }
+            });
+
+            Console.WriteLine($"[Main] Total dive logs exported: {diveLogs.Count}");
+
+            var allSummaries = new StringBuilder();
             var allTanks = new StringBuilder();
             var allSamples = new StringBuilder();
-
-            allSummary.AppendLine(new GeneralDiveLogSummary().ToCsvHeader());
+            allSummaries.AppendLine(new GeneralDiveLogSummary().ToCsvHeader());
             allTanks.AppendLine(new GeneralDiveLogTankInformation().ToCsvHeader());
             allSamples.AppendLine(new GeneralDiveLogSample().ToCsvHeader());
 
-            var inputPath = args[0];
             var outputPath = args[1];
-            var factory = new ExporterFactory();
-            var exporter = factory.GetExporter(inputPath);
-            if (exporter == null)
+            if (!outputPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
-                Console.WriteLine("Cannot find an exporter for the given input file.");
-                return 1;
+                outputPath += Path.DirectorySeparatorChar;
             }
 
-            exporter.Export(inputPath).ForEach(diveLog =>
+            Console.WriteLine($"[Main] Exporting dive logs to {outputPath}");
+            foreach (var diveLog in diveLogs)
             {
                 var summary = diveLog.Summary.ToCsvRow();
                 var tanks = diveLog.Tanks.ToCsvRows();
@@ -46,7 +61,7 @@ namespace DiveLogExporter
 
                 if (!string.IsNullOrWhiteSpace(summary))
                 {
-                    allSummary.AppendLine(summary);
+                    allSummaries.AppendLine(summary);
                 }
 
                 if (!string.IsNullOrWhiteSpace(tanks))
@@ -58,17 +73,12 @@ namespace DiveLogExporter
                 {
                     allSamples.AppendLine(samples);
                 }
-            });
-
-            if (!outputPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
-            {
-                outputPath += Path.DirectorySeparatorChar;
             }
-            Console.WriteLine($"Writing export files to {outputPath}...");
-            File.WriteAllText(Path.Combine(outputPath, "shearwater-export-summary.csv"), allSummary.ToString());
-            File.WriteAllText(Path.Combine(outputPath, "shearwater-export-tanks.csv"), allTanks.ToString());
-            File.WriteAllText(Path.Combine(outputPath, "shearwater-export-samples.csv"), allSamples.ToString());
-            Console.WriteLine("Export complete.");
+
+            File.WriteAllText(Path.Combine(outputPath, "general-dive-log-summaries.csv"), allSummaries.ToString());
+            File.WriteAllText(Path.Combine(outputPath, "general-dive-log-tanks.csv"), allTanks.ToString());
+            File.WriteAllText(Path.Combine(outputPath, "general-dive-log-samples.csv"), allSamples.ToString());
+            Console.WriteLine("[Main] Export complete");
 
             return 0;
         }

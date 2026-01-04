@@ -2,17 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using Assets.Scripts.Persistence.LocalCache;
+using DiveLogExporter.Garmin;
 using DiveLogExporter.Model;
-using DiveLogModels;
 using Dynastream.Fit;
-using OxyPlot;
-using Shearwater;
-using static Assets.Scripts.Sync.AppSyncService;
 
 namespace DiveLogExporter.Exporter
 {
@@ -33,6 +25,8 @@ namespace DiveLogExporter.Exporter
             var fitListener = new FitListener();
             decodeDemo.MesgEvent += fitListener.OnMesg;
             decodeDemo.Read(new FileStream(inputPath, FileMode.Open));
+
+            Console.WriteLine($"[{Name}] Found {fitListener.FitMessages.LapMesgs.Count} dives");
             return ExportDiveLogs(fitListener.FitMessages);
         }
 
@@ -42,6 +36,8 @@ namespace DiveLogExporter.Exporter
             var summaries = new List<GeneralDiveLogSummary>();
 
             var garminSession = garminDiveLogs.SessionMesgs.First();
+            var garminDiveSettings = garminDiveLogs.DiveSettingsMesgs.First();
+            var garminDeviceInfo = garminDiveLogs.DeviceInfoMesgs.First();
 
             for (int i = 0; i < garminDiveLogs.LapMesgs.Count; ++i)
             {
@@ -52,36 +48,39 @@ namespace DiveLogExporter.Exporter
                 {
                     // Summary Info
                     Number = (int)garminDiveSummary.GetReferenceIndex(),
-                    Mode = garminLap.GetSubSport().ToString(),
-                    StartDate = new Dynastream.Fit.DateTime(garminLap.GetStartTime().GetTimeStamp(), -2).ToString(),
-                    EndDate = new Dynastream.Fit.DateTime(garminLap.GetStartTime().GetTimeStamp(), garminDiveSummary.GetBottomTime().Value + 3).ToString(),
-                    DurationInSeconds = (int)Math.Floor(garminDiveSummary.GetBottomTime().Value) + 5,
-                    Buddy = "Unknown",
-                    Location = "Unknown",
-                    Site = "Unknown",
-                    Note = "Unknown",
+                    Mode = GarminUtils.GetDiveMode(garminLap),
+                    StartDate = new Dynastream.Fit.DateTime(garminLap.GetStartTime().GetTimeStamp(), i == 0 ? 0 : -3).ToString(),
+                    EndDate = new Dynastream.Fit.DateTime(garminLap.GetStartTime().GetTimeStamp(), garminDiveSummary.GetBottomTime().Value + 2).ToString(),
+                    DurationInSeconds = (int)Math.Floor(garminDiveSummary.GetBottomTime().Value) + (i == 0 ? 2 : 5),
+                    Buddy = "Tongbo",
+                    Location = "Beijing",
+                    Site = "HiDive",
+                    //Note = "Unknown",
 
                     // Environment Info
                     DepthInMetersMax = garminDiveSummary.GetMaxDepth().Value,
                     DepthInMetersAvg = garminDiveSummary.GetAvgDepth().Value,
+                    HeartRateMax = garminLap.GetMaxHeartRate().Value,
+                    HeartRateMin = garminLap.GetMinHeartRate().Value,
+                    HeartRateAvg = garminLap.GetAvgHeartRate().Value,
                     TemperatureInCelsiusMax = garminLap.GetMaxTemperature().Value,
                     TemperatureInCelsiusMin = garminLap.GetMinTemperature().Value,
                     TemperatureInCelsiusAvg = garminLap.GetAvgTemperature().Value,
                     SurfacePressureInMillibarPreDive = -1,
                     SurfacePressureInMillibarPostDive = -1,
                     SurfaceIntervalInSeconds = (int)garminDiveSummary.GetSurfaceInterval().GetValueOrDefault(0),
-                    Salinity = -1,
-                    SalinityType = "Unknown",
+                    WaterDenisity = (int)Math.Floor(garminDiveSettings.GetWaterDensity().Value),
+                    WaterType = garminDiveSettings.GetWaterType().ToString(),
 
                     // Computer Info
-                    //ComputerModel = ShearwaterUtilsWrapper.GetComputerName(garminDiveSummary),
-                    //ComputerSerialNumber = ShearwaterUtilsWrapper.GetComputerSerialNumber(garminDiveSummary),
-                    //ComputerFirmwareVersion = (int)header.FirmwareVersion,
-                    //BatteryType = ShearwaterUtilsWrapper.GetComputerBatteryType(garminDiveSummary),
-                    //BatteryVoltagePreDive = header.InternalBatteryVoltage,
-                    //BatteryVoltagePostDive = footer.InternalBatteryVoltage,
-                    //SampleRateInMs = header.SampleRateMs,
-                    //DataFormat = $"{interpretedLog.DiveLogDataFormat}-{ShearwaterUtilsWrapper.GetDiveLogVersion(garminDiveSummary)}-{garminDiveSummary.DbVersion}",
+                    ComputerModel = GarminUtils.GetComputerName(garminDeviceInfo),
+                    ComputerSerialNumber = garminDeviceInfo.GetSerialNumber().ToString(),
+                    ComputerFirmwareVersion = garminDeviceInfo.GetSoftwareVersion().ToString(),
+                    BatteryType = "Li-Ion",
+                    //BatteryVoltagePreDive = -1,
+                    //BatteryVoltagePostDive = -1,
+                    SampleRateInMs = 1000,
+                    DataFormat = $"fit",
                 });
 
                 res.Add(new GeneralDiveLog
@@ -90,33 +89,32 @@ namespace DiveLogExporter.Exporter
                 });
             }
 
-            var samples = new List<GeneralDiveLogSample>();
-
             foreach (var garminRecord in garminDiveLogs.RecordMesgs)
             {
-                samples.Add(new GeneralDiveLogSample
-                {
-                    Number = (int)garminRecord.GetTimestamp().GetTimeStamp(),
-                    Depth = garminRecord.GetDepth(),
-                    Temperature = (int)garminRecord.GetTemperature(),
-                });
-            }
+                var currentTime = garminRecord.GetTimestamp().GetDateTime();
 
-            foreach (var sample in samples)
-            {
-                var currentTime = new Dynastream.Fit.DateTime((uint)sample.Number).GetDateTime();
                 foreach (var diveLog in res)
                 {
                     var diveStartTime = System.DateTime.Parse(diveLog.Summary.StartDate);
                     var diveEndTime = System.DateTime.Parse(diveLog.Summary.EndDate);
+
                     if (currentTime >= diveStartTime && currentTime <= diveEndTime)
                     {
-                        sample.Number = diveLog.Summary.Number;
-                        sample.ElapsedTimeInSeconds = (int)(currentTime - diveStartTime).TotalSeconds;
+                        var sample = new GeneralDiveLogSample
+                        {
+                            Number = diveLog.Summary.Number,
+                            ElapsedTimeInSeconds = (int)(currentTime - diveStartTime).TotalSeconds,
+                            Depth = garminRecord.GetDepth(),
+                            Temperature = (int)garminRecord.GetTemperature(),
+                            HeartRate = (int)garminRecord.GetHeartRate(),
+                        };
+
                         if (diveLog.Samples == null)
                         {
+                            diveLog.Summary.SurfacePressureInMillibarPreDive = (int)garminRecord.GetAbsolutePressure().Value / 100;
                             diveLog.Samples = new List<GeneralDiveLogSample>();
                         }
+                        diveLog.Summary.SurfacePressureInMillibarPostDive = (int)garminRecord.GetAbsolutePressure().Value / 100;
                         diveLog.Samples.Add(sample);
                     }
                 }

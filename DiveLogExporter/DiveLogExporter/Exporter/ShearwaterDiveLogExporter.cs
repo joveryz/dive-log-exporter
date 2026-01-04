@@ -2,13 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Assets.Scripts.Persistence.LocalCache;
-using Castle.Core.Logging;
 using DiveLogExporter.Model;
 using DiveLogModels;
-using Shearwater;
 
 namespace DiveLogExporter.Exporter
 {
@@ -29,7 +25,7 @@ namespace DiveLogExporter.Exporter
         {
             var shearwaterDataService = new DataService(inputPath);
             var shearwaterDiveLogs = shearwaterDataService.GetDiveLogsWithRaw();
-            Console.WriteLine($"[{Name}] Found {shearwaterDiveLogs.Count} dives in database");
+            Console.WriteLine($"[{Name}] Found {shearwaterDiveLogs.Count} dives");
 
             var res = new List<GeneralDiveLog>();
 
@@ -63,8 +59,8 @@ namespace DiveLogExporter.Exporter
             var res = new GeneralDiveLogSummary
             {
                 // Summary Info
-                Number = ShearwaterUtilsWrapper.GetDiveNumber(shearwaterDiveLog),
-                Mode = ShearwaterUtilsWrapper.GetDiveMode(shearwaterDiveLog),
+                Number = Shearwater.ShearwaterUtils.GetDiveNumber(shearwaterDiveLog),
+                Mode = Shearwater.ShearwaterUtils.GetDiveMode(shearwaterDiveLog),
                 StartDate = details.DiveDate.ToString(),
                 EndDate = details.DiveDate.AddSeconds(footer.DiveTimeInSeconds).ToString(),
                 DurationInSeconds = footer.DiveTimeInSeconds,
@@ -76,35 +72,38 @@ namespace DiveLogExporter.Exporter
                 // Environment Info
                 DepthInMetersMax = footer.MaxDiveDepth,
                 DepthInMetersAvg = interpretedLog.AverageDepth,
+                //HeartRateMax = new Random().Next(120, 180),
+                //HeartRateMin = new Random().Next(40, 60),
+                //HeartRateAvg = new Random().Next(60, 120),
                 TemperatureInCelsiusMax = interpretedLog.MaxTemp,
                 TemperatureInCelsiusMin = interpretedLog.MinTemp,
                 TemperatureInCelsiusAvg = interpretedLog.AverageTemp,
                 SurfacePressureInMillibarPreDive = header.SurfacePressure,
                 SurfacePressureInMillibarPostDive = footer.SurfacePressure,
                 SurfaceIntervalInSeconds = (int)TimeSpan.FromMinutes(header.SurfaceTime).TotalSeconds,
-                Salinity = header.Salinity,
-                SalinityType = ShearwaterUtilsWrapper.GetSalinityType(shearwaterDiveLog),
+                WaterDenisity = header.Salinity,
+                WaterType = Shearwater.ShearwaterUtils.GetSalinityType(shearwaterDiveLog),
 
                 // Computer Info
-                ComputerModel = ShearwaterUtilsWrapper.GetComputerName(shearwaterDiveLog),
-                ComputerSerialNumber = ShearwaterUtilsWrapper.GetComputerSerialNumber(shearwaterDiveLog),
-                ComputerFirmwareVersion = (int)header.FirmwareVersion,
-                BatteryType = ShearwaterUtilsWrapper.GetComputerBatteryType(shearwaterDiveLog),
+                ComputerModel = Shearwater.ShearwaterUtils.GetComputerName(shearwaterDiveLog),
+                ComputerSerialNumber = Shearwater.ShearwaterUtils.GetComputerSerialNumber(shearwaterDiveLog),
+                ComputerFirmwareVersion = header.FirmwareVersion.ToString(),
+                BatteryType = Shearwater.ShearwaterUtils.GetComputerBatteryType(shearwaterDiveLog),
                 BatteryVoltagePreDive = header.InternalBatteryVoltage,
                 BatteryVoltagePostDive = footer.InternalBatteryVoltage,
                 SampleRateInMs = header.SampleRateMs,
-                DataFormat = $"{interpretedLog.DiveLogDataFormat}-{ShearwaterUtilsWrapper.GetDiveLogVersion(shearwaterDiveLog)}-{shearwaterDiveLog.DbVersion}",
+                DataFormat = $"{interpretedLog.DiveLogDataFormat}-{Shearwater.ShearwaterUtils.GetDiveLogVersion(shearwaterDiveLog)}-{shearwaterDiveLog.DbVersion}",
             };
 
-            if (!ShearwaterUtilsWrapper.IsFreeDive(shearwaterDiveLog))
+            if (!Shearwater.ShearwaterUtils.IsFreeDive(shearwaterDiveLog))
             {
                 // Optional Deco Info
-                res.DecoModel = ShearwaterUtilsWrapper.GetDecoModel(shearwaterDiveLog);
+                res.DecoModel = Shearwater.ShearwaterUtils.GetDecoModel(shearwaterDiveLog);
                 res.GradientFactorLow = header.GradientFactorLow;
                 res.GradientFactorHigh = header.GradientFactorHigh;
-                res.GradientFactor99Max = interpretedLog.PeakEndGF99;
-                res.CNSPercentPreDive = header.CnsPercent;
-                res.CNSPercentPostDive = footer.CnsPercent;
+                res.GradientFactorSurfaceEnd = interpretedLog.PeakEndGF99;
+                res.CentralNervousSystemPercentPreDive = header.CnsPercent;
+                res.CentralNervousSystemPercentPostDive = footer.CnsPercent;
             }
 
             return res;
@@ -113,6 +112,7 @@ namespace DiveLogExporter.Exporter
         private List<GeneralDiveLogSample> ExportSingleDiveLogSampls(DiveLog shearwaterDiveLog, List<DiveLogSample> shearwaterDiveLogSamples)
         {
             var res = new List<GeneralDiveLogSample>();
+            //var random = new Random();
 
             foreach (var shearwaterDiveLogSample in shearwaterDiveLogSamples)
             {
@@ -123,30 +123,31 @@ namespace DiveLogExporter.Exporter
 
                 var sample = new GeneralDiveLogSample
                 {
-                    Number = ShearwaterUtilsWrapper.GetDiveNumber(shearwaterDiveLog),
+                    Number = Shearwater.ShearwaterUtils.GetDiveNumber(shearwaterDiveLog),
                     ElapsedTimeInSeconds = (int)shearwaterDiveLogSample.TimeSinceStartInSeconds,
-                    Depth = ShearwaterUtilsWrapper.GetDepthInMeters(shearwaterDiveLog, shearwaterDiveLogSample),
+                    Depth = Shearwater.ShearwaterUtils.GetDepthInMeters(shearwaterDiveLog, shearwaterDiveLogSample),
                     Temperature = shearwaterDiveLogSample.WaterTemperature,
+                    //HeartRate = random.Next(60, 120),
                     BatteryVoltage = shearwaterDiveLogSample.BatteryVoltage,
                 };
 
-                if (!ShearwaterUtilsWrapper.IsFreeDive(shearwaterDiveLog))
+                if (!Shearwater.ShearwaterUtils.IsFreeDive(shearwaterDiveLog))
                 {
 
                     sample.TimeToSurfaceInMinutes = shearwaterDiveLogSample.TimeToSurface;
                     sample.TimeToSurfaceInMinutesAtPlusFive = shearwaterDiveLogSample.AtPlusFive;
                     sample.NoDecoLimit = shearwaterDiveLogSample.CurrentNoDecoLimit;
-                    sample.CNS = shearwaterDiveLogSample.CentralNervousSystemPercentage;
-                    sample.GasDensity = ShearwaterUtilsWrapper.GetGasDensityInGPerL(shearwaterDiveLog, shearwaterDiveLogSample);
+                    sample.CentralNervousSystemPercent = shearwaterDiveLogSample.CentralNervousSystemPercentage;
+                    sample.GasDensity = Shearwater.ShearwaterUtils.GetGasDensityInGPerL(shearwaterDiveLog, shearwaterDiveLogSample);
                     sample.GradientFactor99 = shearwaterDiveLogSample.Gf99;
                     sample.PPO2 = shearwaterDiveLogSample.AveragePPO2;
-                    (sample.PPN2, sample.PPHe) = ShearwaterUtilsWrapper.GetGasPartialPressureInAta(shearwaterDiveLog, shearwaterDiveLogSample);
-                    sample.Tank1PressureInBar = ShearwaterUtilsWrapper.GetTankPressureInBar(shearwaterDiveLogSample, 0);
-                    sample.Tank2PressureInBar = ShearwaterUtilsWrapper.GetTankPressureInBar(shearwaterDiveLogSample, 1);
-                    sample.Tank3PressureInBar = ShearwaterUtilsWrapper.GetTankPressureInBar(shearwaterDiveLogSample, 2);
-                    sample.Tank4PressureInBar = ShearwaterUtilsWrapper.GetTankPressureInBar(shearwaterDiveLogSample, 3);
-                    sample.SurfaceAirConsumptionInBar = ShearwaterUtilsWrapper.GetSurfaceAirConsumptionInBar(shearwaterDiveLogSample);
-                    sample.GasTimeRemainingInMinutes = ShearwaterUtilsWrapper.GetGasTimeRemainingInMinutes(shearwaterDiveLogSample);
+                    (sample.PPN2, sample.PPHe) = Shearwater.ShearwaterUtils.GetGasPartialPressureInAta(shearwaterDiveLog, shearwaterDiveLogSample);
+                    sample.Tank1PressureInBar = Shearwater.ShearwaterUtils.GetTankPressureInBar(shearwaterDiveLogSample, 0);
+                    sample.Tank2PressureInBar = Shearwater.ShearwaterUtils.GetTankPressureInBar(shearwaterDiveLogSample, 1);
+                    sample.Tank3PressureInBar = Shearwater.ShearwaterUtils.GetTankPressureInBar(shearwaterDiveLogSample, 2);
+                    sample.Tank4PressureInBar = Shearwater.ShearwaterUtils.GetTankPressureInBar(shearwaterDiveLogSample, 3);
+                    sample.SurfaceAirConsumptionInBar = Shearwater.ShearwaterUtils.GetSurfaceAirConsumptionInBar(shearwaterDiveLogSample);
+                    sample.GasTimeRemainingInMinutes = Shearwater.ShearwaterUtils.GetGasTimeRemainingInMinutes(shearwaterDiveLogSample);
                 }
 
                 res.Add(sample);
@@ -158,11 +159,11 @@ namespace DiveLogExporter.Exporter
         private List<GeneralDiveLogTankInformation> ExportSingleDiveLogTanks(DiveLog shearwaterDiveLog)
         {
             var res = new List<GeneralDiveLogTankInformation>();
-            if (!ShearwaterUtilsWrapper.IsFreeDive(shearwaterDiveLog))
+            if (!Shearwater.ShearwaterUtils.IsFreeDive(shearwaterDiveLog))
             {
                 for (int i = 0; i < MaxTankCount; ++i)
                 {
-                    var tankInfo = ShearwaterUtilsWrapper.GetTankInformation(shearwaterDiveLog, i);
+                    var tankInfo = Shearwater.ShearwaterUtils.GetTankInformation(shearwaterDiveLog, i);
 
                     if (tankInfo != null)
                     {
