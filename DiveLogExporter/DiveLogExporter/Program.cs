@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using DiveLogExporter.Model;
 using DiveLogExporter.Parser;
@@ -10,14 +11,27 @@ namespace DiveLogExporter
 {
     public class Program
     {
+        private static ProgramVersion ExporterVersion { get; set; }
+
         static int Main(string[] args)
         {
+            ExporterVersion = new ProgramVersion();
+            GetVersion();
+
+            // Handle --version argument
+            if (args.Length == 1 && (args[0] == "--version" || args[0] == "-v"))
+            {
+                Console.WriteLine(ExporterVersion.ToString());
+                return 0;
+            }
+
             // 1st arg: input directory with dive log files
             // 2nd arg: output directory
             if (args.Length != 1 && args.Length != 2)
             {
                 Console.WriteLine("Usage: DiveLogExporter <input directory> <output directory>");
                 Console.WriteLine("   or: DiveLogExporter <directory>");
+                Console.WriteLine("   or: DiveLogExporter --version");
                 return 1;
             }
 
@@ -44,7 +58,7 @@ namespace DiveLogExporter
             AdjustDiveLogNumbers(ref diveLogs);
             ExportDiveLogsToCsvFiles(diveLogs, outputPath);
 
-            Console.WriteLine($"[Main] Total dive logs parsed: {diveLogs.Count}");
+            Console.WriteLine($"[Main] Export complete, total dive logs parsed: {diveLogs.Count}");
             return 0;
         }
 
@@ -57,7 +71,7 @@ namespace DiveLogExporter
             {
                 if (diveLog.Summary.Number != currentNumber)
                 {
-                    Console.WriteLine($"[Main] Adjusting dive log number from {diveLog.Summary.Number} to {currentNumber}");
+                    Console.WriteLine($"[Main] Adjusting dive log number from {diveLog.Summary.Number} to {currentNumber}, diff: {currentNumber-diveLog.Summary.Number}");
                 }
 
                 diveLog.Summary.Number = currentNumber;
@@ -87,9 +101,12 @@ namespace DiveLogExporter
             var allSummaries = new StringBuilder();
             var allTanks = new StringBuilder();
             var allSamples = new StringBuilder();
+            var version = new StringBuilder();
             allSummaries.AppendLine(new GeneralDiveLogSummary().ToCsvHeader());
             allTanks.AppendLine(new GeneralDiveLogTankInformation().ToCsvHeader());
             allSamples.AppendLine(new GeneralDiveLogSample().ToCsvHeader());
+            version.AppendLine(new ProgramVersion().ToCsvHeader());
+            version.AppendLine(ExporterVersion.ToCsvRow());
 
             if (!outputPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
@@ -118,11 +135,44 @@ namespace DiveLogExporter
                     allSamples.AppendLine(samples);
                 }
             }
-
             File.WriteAllText(Path.Combine(outputPath, "general-dive-log-summaries.csv"), allSummaries.ToString());
             File.WriteAllText(Path.Combine(outputPath, "general-dive-log-tanks.csv"), allTanks.ToString());
             File.WriteAllText(Path.Combine(outputPath, "general-dive-log-samples.csv"), allSamples.ToString());
-            Console.WriteLine("[Main] Export complete");
+            File.WriteAllText(Path.Combine(outputPath, "general-dive-log-exporter-version.csv"), version.ToString());
+        }
+
+        private static void GetVersion()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            ExporterVersion.Version = assembly.GetName().Version.ToString();
+
+            // Get git commit from assembly metadata
+            var metadataAttributes = assembly.GetCustomAttributes<AssemblyMetadataAttribute>();
+            foreach (var attr in metadataAttributes)
+            {
+                if (attr.Key == "GitCommit")
+                {
+                    ExporterVersion.Commit = attr.Value;
+                }
+                else if (attr.Key == "BuildDateUtc")
+                {
+                    ExporterVersion.BuildDate = attr.Value;
+                }
+            }
+        }
+
+        private class ProgramVersion
+        {
+            public string Version { get; set; }
+
+            public string Commit { get; set; }
+
+            public string BuildDate { get; set; }
+
+            public override string ToString()
+            {
+                return $"v{Version}({Commit}) on {BuildDate}";
+            }
         }
     }
 }

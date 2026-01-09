@@ -163,4 +163,37 @@
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="GenerateGitInfo" BeforeTargets="CoreCompile">
+    <Exec Command="git rev-parse --short HEAD" ConsoleToMsBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+    </Exec>
+    <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHashFull" />
+    </Exec>
+    <PropertyGroup Condition="'$(GitCommitHash)' == ''">
+      <GitCommitHash>unknown</GitCommitHash>
+      <GitCommitHashFull>unknown</GitCommitHashFull>
+    </PropertyGroup>
+    <PropertyGroup>
+      <BuildDateUtc>$([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss"))</BuildDateUtc>
+    </PropertyGroup>
+    <ItemGroup>
+      <AssemblyAttributes Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>GitCommit</_Parameter1>
+        <_Parameter2>$(GitCommitHash)</_Parameter2>
+      </AssemblyAttributes>
+      <AssemblyAttributes Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>GitCommitFull</_Parameter1>
+        <_Parameter2>$(GitCommitHashFull)</_Parameter2>
+      </AssemblyAttributes>
+      <AssemblyAttributes Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BuildDateUtc</_Parameter1>
+        <_Parameter2>$(BuildDateUtc)</_Parameter2>
+      </AssemblyAttributes>
+    </ItemGroup>
+    <WriteCodeFragment AssemblyAttributes="@(AssemblyAttributes)" Language="C#" OutputFile="$(IntermediateOutputPath)GitInfo.cs">
+      <Output TaskParameter="OutputFile" ItemName="Compile" />
+    </WriteCodeFragment>
+    <Message Text="Git Commit: $(GitCommitHash)" Importance="High" />
+  </Target>
 </Project>
