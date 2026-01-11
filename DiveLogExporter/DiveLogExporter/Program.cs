@@ -71,7 +71,7 @@ namespace DiveLogExporter
             {
                 if (diveLog.Summary.Number != currentNumber)
                 {
-                    Console.WriteLine($"[Main] Adjusting dive log number from {diveLog.Summary.Number} to {currentNumber}, diff: {currentNumber-diveLog.Summary.Number}");
+                    Console.WriteLine($"[Main] Adjusting dive log number from {diveLog.Summary.Number} to {currentNumber}, diff: {currentNumber - diveLog.Summary.Number}");
                 }
 
                 diveLog.Summary.Number = currentNumber;
